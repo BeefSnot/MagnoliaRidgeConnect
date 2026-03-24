@@ -213,6 +213,8 @@ Set environment variables in Vercel (API project):
 
 The API has `apps/api/vercel.json` + `apps/api/api/index.ts` and does not require an interactive terminal.
 
+`vercel-build` uses `prisma db push` so first deploy can create tables automatically.
+
 ### 3) Deploy web app on Vercel
 
 Import this repository in Vercel and configure the project with:

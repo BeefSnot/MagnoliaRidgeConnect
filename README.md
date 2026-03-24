@@ -213,9 +213,11 @@ Set environment variables in this single Vercel project:
 - `CLIENT_ORIGIN=https://<your-project>.vercel.app`
 - `EXPO_PUBLIC_API_URL=/api`
 
+If you use Vercel Postgres integration, keep the auto-provided `POSTGRES_URL_NON_POOLING` variable. The build automatically prefers it for Prisma schema sync.
+
 This repo now includes root `vercel.json` and root `api/[...all].ts` so `/api/*` routes hit the Express API while web files are served from the same deployment.
 
-`vercel-build` runs Prisma (`prisma db push`) so first deploy can create tables without an interactive terminal.
+`vercel-build` runs Prisma (`prisma db push`) so first deploy can create tables without an interactive terminal, and fails fast if DB env vars are missing.
 
 ### Vercel note
 

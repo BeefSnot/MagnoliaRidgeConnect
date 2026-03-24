@@ -1,0 +1,30 @@
+import { Router } from "express";
+import { alertsRouter } from "./alerts.routes.js";
+import { authRouter } from "./auth.routes.js";
+import { calendarRouter } from "./calendar.routes.js";
+import { communityRouter } from "./community.routes.js";
+import { directoryRouter } from "./directory.routes.js";
+import { documentsRouter } from "./documents.routes.js";
+import { eventsRouter } from "./events.routes.js";
+import { messagesRouter } from "./messages.routes.js";
+import { moderationRouter } from "./moderation.routes.js";
+import { notificationsRouter } from "./notifications.routes.js";
+import { pollsRouter } from "./polls.routes.js";
+import { postsRouter } from "./posts.routes.js";
+import { usersRouter } from "./users.routes.js";
+
+export const router = Router();
+
+router.use("/auth", authRouter);
+router.use("/users", usersRouter);
+router.use("/posts", postsRouter);
+router.use("/messages", messagesRouter);
+router.use("/events", eventsRouter);
+router.use("/polls", pollsRouter);
+router.use("/calendar", calendarRouter);
+router.use("/community", communityRouter);
+router.use("/moderation", moderationRouter);
+router.use("/directory", directoryRouter);
+router.use("/documents", documentsRouter);
+router.use("/alerts", alertsRouter);
+router.use("/notifications", notificationsRouter);

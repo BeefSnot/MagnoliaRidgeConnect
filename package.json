@@ -1,0 +1,21 @@
+{
+  "name": "magnolia-ridge-connect",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:web": "kill-port 8081 19006 19007 8082 || true && cross-env CI=1 npm run --workspace apps/mobile web -- --port 19006",
+    "dev:mobile": "npm run --workspace apps/mobile start -- --port 8082",
+    "dev:api": "npm run --workspace apps/api dev",
+    "build:api": "npm run --workspace apps/api build",
+    "start:api": "npm run --workspace apps/api start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "kill-port": "^2.0.1"
+  }
+}

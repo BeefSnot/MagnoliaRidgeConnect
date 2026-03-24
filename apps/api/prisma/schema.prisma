@@ -1,0 +1,327 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+}
+
+enum ModerationStatus {
+  OPEN
+  RESOLVED
+}
+
+model User {
+  id              Int                         @id @default(autoincrement())
+  email           String                      @unique
+  passwordHash    String
+  fullName        String
+  unitNumber      String
+  status          UserStatus                  @default(PENDING)
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
+  approvalsReceived Approval[]                @relation("ApprovedUser")
+  approvalsGiven  Approval[]                  @relation("ApprovedBy")
+  userRoles       UserRole[]
+  posts           Post[]
+  comments        Comment[]
+  conversations   ConversationParticipant[]
+  messages        Message[]
+  eventsCreated   Event[]                     @relation("EventCreatedBy")
+  pollsCreated    Poll[]                      @relation("PollCreatedBy")
+  votes           PollVote[]
+  googleIntegrations GoogleIntegration[]
+  moderationReportsCreated ModerationReport[] @relation("ModerationCreatedBy")
+  moderationReportsResolved ModerationReport[] @relation("ModerationResolvedBy")
+  residentProfile ResidentProfile?
+  documentsCreated Document[]                 @relation("DocumentCreatedBy")
+  documentAcks    DocumentAcknowledgement[]
+  emergencyAlertsCreated EmergencyAlert[]     @relation("AlertCreatedBy")
+  emergencyAlertReads EmergencyAlertRead[]
+  pushTokens      PushToken[]
+  notifications   Notification[]
+}
+
+model Approval {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  approvedBy  Int
+  approvedAt  DateTime @default(now())
+  note        String?
+
+  user        User     @relation("ApprovedUser", fields: [userId], references: [id])
+  approver    User     @relation("ApprovedBy", fields: [approvedBy], references: [id])
+
+  @@index([userId])
+  @@index([approvedBy])
+}
+
+model Role {
+  id              Int              @id @default(autoincrement())
+  name            String           @unique
+  description     String?
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+}
+
+model Permission {
+  id              Int              @id @default(autoincrement())
+  key             String           @unique
+  description     String?
+  rolePermissions RolePermission[]
+}
+
+model UserRole {
+  userId   Int
+  roleId   Int
+
+  user     User  @relation(fields: [userId], references: [id])
+  role     Role  @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId])
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+}
+
+model Post {
+  id          Int       @id @default(autoincrement())
+  authorId    Int
+  content     String    @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  author      User      @relation(fields: [authorId], references: [id])
+  comments    Comment[]
+
+  @@index([createdAt])
+}
+
+model Comment {
+  id          Int       @id @default(autoincrement())
+  postId      Int
+  authorId    Int
+  content     String    @db.Text
+  createdAt   DateTime  @default(now())
+
+  post        Post      @relation(fields: [postId], references: [id])
+  author      User      @relation(fields: [authorId], references: [id])
+
+  @@index([postId])
+}
+
+model Conversation {
+  id            Int                         @id @default(autoincrement())
+  title         String?
+  isGroup       Boolean                     @default(false)
+  createdAt     DateTime                    @default(now())
+  participants  ConversationParticipant[]
+  messages      Message[]
+}
+
+model ConversationParticipant {
+  conversationId Int
+  userId         Int
+  joinedAt       DateTime @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@id([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             Int      @id @default(autoincrement())
+  conversationId Int
+  senderId       Int
+  body           String   @db.Text
+  createdAt      DateTime @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  sender         User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt])
+}
+
+model Event {
+  id            Int       @id @default(autoincrement())
+  title         String
+  description   String?   @db.Text
+  startsAt      DateTime
+  endsAt        DateTime
+  location      String?
+  createdById   Int
+  googleEventId String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  createdBy     User      @relation("EventCreatedBy", fields: [createdById], references: [id])
+
+  @@index([startsAt])
+}
+
+model Poll {
+  id          Int          @id @default(autoincrement())
+  question    String
+  createdById Int
+  closesAt    DateTime?
+  createdAt   DateTime     @default(now())
+
+  createdBy   User         @relation("PollCreatedBy", fields: [createdById], references: [id])
+  options     PollOption[]
+  votes       PollVote[]
+}
+
+model PollOption {
+  id        Int      @id @default(autoincrement())
+  pollId    Int
+  label     String
+
+  poll      Poll     @relation(fields: [pollId], references: [id])
+  votes     PollVote[]
+
+  @@index([pollId])
+}
+
+model PollVote {
+  pollId      Int
+  optionId    Int
+  userId      Int
+  createdAt   DateTime @default(now())
+
+  poll        Poll     @relation(fields: [pollId], references: [id])
+  option      PollOption @relation(fields: [optionId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@id([pollId, userId])
+  @@index([optionId])
+}
+
+model GoogleIntegration {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  refreshToken   String?  @db.Text
+  accessToken    String?  @db.Text
+  tokenExpiresAt DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId])
+}
+
+model ModerationReport {
+  id           Int              @id @default(autoincrement())
+  targetType   String
+  targetId     Int
+  reason       String
+  details      String?          @db.Text
+  status       ModerationStatus @default(OPEN)
+  createdById  Int
+  resolvedById Int?
+  createdAt    DateTime         @default(now())
+  resolvedAt   DateTime?
+
+  createdBy    User             @relation("ModerationCreatedBy", fields: [createdById], references: [id])
+  resolvedBy   User?            @relation("ModerationResolvedBy", fields: [resolvedById], references: [id])
+
+  @@index([status, createdAt])
+}
+
+model ResidentProfile {
+  userId           Int      @id
+  about            String?  @db.Text
+  contactEmail     String?
+  contactPhone     String?
+  showInDirectory  Boolean  @default(true)
+  updatedAt        DateTime @updatedAt
+
+  user             User     @relation(fields: [userId], references: [id])
+}
+
+model Document {
+  id              Int                      @id @default(autoincrement())
+  title           String
+  body            String                   @db.Text
+  category        String?
+  createdById     Int
+  createdAt       DateTime                 @default(now())
+
+  createdBy       User                     @relation("DocumentCreatedBy", fields: [createdById], references: [id])
+  acknowledgements DocumentAcknowledgement[]
+}
+
+model DocumentAcknowledgement {
+  documentId      Int
+  userId          Int
+  acknowledgedAt  DateTime @default(now())
+
+  document        Document @relation(fields: [documentId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@id([documentId, userId])
+}
+
+model EmergencyAlert {
+  id          Int      @id @default(autoincrement())
+  title       String
+  message     String   @db.Text
+  level       String
+  createdById Int
+  createdAt   DateTime @default(now())
+
+  createdBy   User               @relation("AlertCreatedBy", fields: [createdById], references: [id])
+  reads       EmergencyAlertRead[]
+}
+
+model EmergencyAlertRead {
+  alertId    Int
+  userId     Int
+  readAt     DateTime @default(now())
+
+  alert      EmergencyAlert @relation(fields: [alertId], references: [id])
+  user       User           @relation(fields: [userId], references: [id])
+
+  @@id([alertId, userId])
+}
+
+model PushToken {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  token      String   @unique
+  platform   String
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  title      String
+  body       String   @db.Text
+  type       String
+  entityId   Int?
+  readAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+}

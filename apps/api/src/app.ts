@@ -9,6 +9,15 @@ import { router } from "./modules/index.js";
 
 export const app = express();
 
+const noopIo = {
+  emit: (_event: string, _payload?: unknown) => {},
+  to: (_room: string) => ({
+    emit: (_event: string, _payload?: unknown) => {}
+  })
+};
+
+app.set("io", noopIo);
+
 const configuredOrigins = env.CLIENT_ORIGIN
   .split(",")
   .map((origin) => origin.trim())

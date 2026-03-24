@@ -21,23 +21,23 @@ Full-stack Expo + React TypeScript community platform for Magnolia Ridge MHC (Va
 - Admin user management and role assignment UI.
 - Realtime socket events for posts, messages, and notifications.
 
-## Data Modes (No DB now, MySQL later)
+## Data Modes (Quick Start)
 
 This project supports two modes:
 
-- `DATA_MODE=memory` (default): no database required, ideal for local testing.
-- `DATA_MODE=mysql`: full Prisma + MySQL mode.
+- `DATA_MODE=memory`: no database required.
+- `DATA_MODE=database`: full Prisma mode (PostgreSQL on Vercel/Neon supported).
 
 Switching is just environment config:
 
-1. In `apps/api/.env`, set `DATA_MODE=memory` for testing now.
-2. When ready, set `DATA_MODE=mysql` and set `DATABASE_URL`.
-3. Run Prisma commands, then restart API.
+1. Set `DATA_MODE=memory` for local no-DB mode.
+2. Set `DATA_MODE=database` + `DATABASE_URL` for deployed DB mode.
+3. Deploy (Vercel build runs Prisma deploy automatically for API project).
 
 ## Project Structure
 
 - `apps/mobile` - Expo app (iOS, Android, and web)
-- `apps/api` - Express + TypeScript + Prisma API (MySQL)
+- `apps/api` - Express + TypeScript + Prisma API (PostgreSQL-ready)
 
 ## Setup
 
@@ -62,7 +62,7 @@ Set at minimum:
 
 `JWT_SECRET` is optional in `DATA_MODE=memory` (a dev fallback is used automatically), but required for production use.
 
-If `DATA_MODE=mysql`, also set:
+If `DATA_MODE=database`, also set:
 
 - `DATABASE_URL`
 - `JWT_SECRET` (24+ chars)
@@ -85,7 +85,7 @@ Adjust:
 
 ### 4) Prisma generate/migrate/seed
 
-Run this only when `DATA_MODE=mysql`:
+Run this when `DATA_MODE=database`:
 
 ```bash
 npm run --workspace apps/api prisma:generate
@@ -133,13 +133,13 @@ npm run dev:mobile
 
 Then run Expo on device, simulator, or web.
 
-## Switching from Testing to MySQL
+## Switching from Testing to Database Mode
 
-When you're done testing in memory mode and ready to use your MySQL server:
+When you're done testing in memory mode and ready to use your database:
 
 1. Open `apps/api/.env`
-2. Set `DATA_MODE=mysql`
-3. Set `DATABASE_URL=mysql://USER:PASSWORD@HOST:3306/mrc`
+2. Set `DATA_MODE=database`
+3. Set `DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DB?sslmode=require`
 4. Run Prisma setup:
 
 ```bash
@@ -196,24 +196,22 @@ git commit -m "Prepare deployment"
 git push -u origin main
 ```
 
-### 2) Deploy API (Railway/Render/Fly)
+### 2) Deploy API on Vercel (upload-and-go)
 
-This API uses Socket.IO and upload storage, so a long-running Node host is recommended for testing.
+Import the same repository in Vercel as a second project and configure:
 
-Set environment variables on your API host:
+- Root Directory: `apps/api`
+- Build Command: `npm run vercel-build`
+- Install Command: `npm install`
 
-- `DATA_MODE=mysql`
-- `DATABASE_URL=<your-mysql-url>`
+Set environment variables in Vercel (API project):
+
+- `DATA_MODE=database`
+- `DATABASE_URL=<your-vercel/neon-postgres-url>`
 - `JWT_SECRET=<24+ chars>`
-- `CLIENT_ORIGIN=https://<your-vercel-domain>`
+- `CLIENT_ORIGIN=https://<your-web-vercel-domain>`
 
-Run once on the API host:
-
-```bash
-npm run prisma:generate
-npm run prisma:migrate
-npm run prisma:seed
-```
+The API has `apps/api/vercel.json` + `apps/api/api/index.ts` and does not require an interactive terminal.
 
 ### 3) Deploy web app on Vercel
 
@@ -224,8 +222,12 @@ Import this repository in Vercel and configure the project with:
 - Output Directory: `dist`
 - Install Command: `npm install`
 
-Set Vercel environment variable:
+Set Vercel environment variable (web project):
 
 - `EXPO_PUBLIC_API_URL=https://<your-api-domain>/api`
 
 The file `apps/mobile/vercel.json` is already included with SPA rewrites.
+
+### Vercel note
+
+Realtime Socket.IO and persistent local file uploads are limited on serverless platforms. Core HTTP + database features work, and this setup is meant for fast testing deployment.

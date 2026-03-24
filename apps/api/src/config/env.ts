@@ -6,7 +6,7 @@ config();
 const envSchema = z.object({
   PORT: z.coerce.number().default(4000),
   CLIENT_ORIGIN: z.string().default("http://localhost:8081"),
-  DATA_MODE: z.enum(["memory", "mysql"]).default("memory"),
+  DATA_MODE: z.enum(["memory", "database", "mysql"]).default("memory"),
   AUTO_APPROVE_REGISTRATION: z.coerce.boolean().default(false),
   DATABASE_URL: z.string().optional(),
   JWT_SECRET: z.string().optional(),
@@ -21,19 +21,21 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REDIRECT_URI: z.string().optional()
 }).superRefine((value, ctx) => {
-  if (value.DATA_MODE === "mysql" && !value.DATABASE_URL) {
+  const usingDatabase = value.DATA_MODE !== "memory";
+
+  if (usingDatabase && !value.DATABASE_URL) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["DATABASE_URL"],
-      message: "DATABASE_URL is required when DATA_MODE=mysql"
+      message: "DATABASE_URL is required when DATA_MODE=database"
     });
   }
 
-  if (value.DATA_MODE === "mysql" && (!value.JWT_SECRET || value.JWT_SECRET.length < 24)) {
+  if (usingDatabase && (!value.JWT_SECRET || value.JWT_SECRET.length < 24)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["JWT_SECRET"],
-      message: "JWT_SECRET (min 24 chars) is required when DATA_MODE=mysql"
+      message: "JWT_SECRET (min 24 chars) is required when DATA_MODE=database"
     });
   }
 });
@@ -42,6 +44,7 @@ const parsed = envSchema.parse(process.env);
 
 export const env = {
   ...parsed,
+  DATA_MODE: parsed.DATA_MODE === "mysql" ? "database" : parsed.DATA_MODE,
   JWT_SECRET: parsed.JWT_SECRET && parsed.JWT_SECRET.length >= 24
     ? parsed.JWT_SECRET
     : "mrc-memory-dev-secret-change-before-mysql"

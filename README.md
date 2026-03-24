@@ -185,3 +185,47 @@ npm run dev:mobile
 ```
 
 In Expo CLI, press `s` if needed to switch to tunnel/lan mode, then scan QR in Expo Go.
+
+## Deploy (Testing)
+
+### 1) Push to GitHub
+
+```bash
+git add .
+git commit -m "Prepare deployment"
+git push -u origin main
+```
+
+### 2) Deploy API (Railway/Render/Fly)
+
+This API uses Socket.IO and upload storage, so a long-running Node host is recommended for testing.
+
+Set environment variables on your API host:
+
+- `DATA_MODE=mysql`
+- `DATABASE_URL=<your-mysql-url>`
+- `JWT_SECRET=<24+ chars>`
+- `CLIENT_ORIGIN=https://<your-vercel-domain>`
+
+Run once on the API host:
+
+```bash
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:seed
+```
+
+### 3) Deploy web app on Vercel
+
+Import this repository in Vercel and configure the project with:
+
+- Root Directory: `apps/mobile`
+- Build Command: `npm run build:web`
+- Output Directory: `dist`
+- Install Command: `npm install`
+
+Set Vercel environment variable:
+
+- `EXPO_PUBLIC_API_URL=https://<your-api-domain>/api`
+
+The file `apps/mobile/vercel.json` is already included with SPA rewrites.

@@ -11,7 +11,8 @@
     "dev:mobile": "npm run --workspace apps/mobile start -- --port 8082",
     "dev:api": "npm run --workspace apps/api dev",
     "build:api": "npm run --workspace apps/api build",
-    "start:api": "npm run --workspace apps/api start"
+    "start:api": "npm run --workspace apps/api start",
+    "vercel-build": "npm run --workspace apps/api vercel-build && npm run --workspace apps/mobile build:web"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

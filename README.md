@@ -196,39 +196,26 @@ git commit -m "Prepare deployment"
 git push -u origin main
 ```
 
-### 2) Deploy API on Vercel (upload-and-go)
+### 2) Deploy one Vercel project (web + api)
 
-Import the same repository in Vercel as a second project and configure:
+Import this repository in Vercel as a single project and configure:
 
-- Root Directory: `apps/api`
+- Root Directory: `.`
 - Build Command: `npm run vercel-build`
+- Output Directory: `apps/mobile/dist`
 - Install Command: `npm install`
 
-Set environment variables in Vercel (API project):
+Set environment variables in this single Vercel project:
 
 - `DATA_MODE=database`
 - `DATABASE_URL=<your-vercel/neon-postgres-url>`
 - `JWT_SECRET=<24+ chars>`
-- `CLIENT_ORIGIN=https://<your-web-vercel-domain>`
+- `CLIENT_ORIGIN=https://<your-project>.vercel.app`
+- `EXPO_PUBLIC_API_URL=/api`
 
-The API has `apps/api/vercel.json` + `apps/api/api/index.ts` and does not require an interactive terminal.
+This repo now includes root `vercel.json` and root `api/[...all].ts` so `/api/*` routes hit the Express API while web files are served from the same deployment.
 
-`vercel-build` uses `prisma db push` so first deploy can create tables automatically.
-
-### 3) Deploy web app on Vercel
-
-Import this repository in Vercel and configure the project with:
-
-- Root Directory: `apps/mobile`
-- Build Command: `npm run build:web`
-- Output Directory: `dist`
-- Install Command: `npm install`
-
-Set Vercel environment variable (web project):
-
-- `EXPO_PUBLIC_API_URL=https://<your-api-domain>/api`
-
-The file `apps/mobile/vercel.json` is already included with SPA rewrites.
+`vercel-build` runs Prisma (`prisma db push`) so first deploy can create tables without an interactive terminal.
 
 ### Vercel note
 
